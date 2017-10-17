@@ -14,4 +14,7 @@ After docker is done you will end up with twi services up the api and Kibana lis
 * Api http://localhost:9200/
 * Kibana http://localhost:5601/
 
+# Installing nutch
+in progress.....
 
+http://hbase.apache.org/book.html#quickstart
