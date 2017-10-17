@@ -2,7 +2,7 @@
 
 * install docker https://docs.docker.com/engine/installation/
 * install git https://git-scm.com/downloads
-* Clone the following git repo
+* Clone the git repo - https://github.com/elastic/stack-docker
   * ```git clone git@github.com:elastic/stack-docker.git```
 * Change to the stat-docker directory and run 
   * ```docker-compose up```
