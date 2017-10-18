@@ -100,6 +100,7 @@
     and add changing="true" alongside the dependency declaration. An example has been
     provided for the gora-core dependency as below -->
     <dependency org="org.apache.gora" name="gora-core" rev="0.6.1" conf="*->default"/>
+    <!-- <dependency org="org.apache.gora" name="gora-core" rev="0.7" conf="*->default"/> -->
     
     <!-- Uncomment this to use SQL as Gora backend. It should be noted that the 
     gora-sql 0.1.1-incubating artifact is NOT compatable with gora-core 0.3. Users should 
@@ -114,6 +115,10 @@
     <!-- Uncomment this to use HBase as Gora backend. -->
     <dependency org="org.apache.gora" name="gora-hbase" rev="0.6.1" conf="*->default" />
     <dependency org="org.apache.hbase" name="hbase-common" rev="0.98.8-hadoop2" conf="*->default" />
+    <!-- 
+    <dependency org="org.apache.gora" name="gora-hbase" rev="0.7" conf="*->default" />
+    <dependency org="org.apache.hbase" name="hbase-common" rev="1.2.6" conf="*->default" />
+    -->
     <!-- Uncomment this to use Accumulo as Gora backend. -->
     <!--
     <dependency org="org.apache.gora" name="gora-accumulo" rev="0.6.1" conf="*->default" />

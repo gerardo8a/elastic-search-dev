@@ -71,5 +71,9 @@
     <value>2500500</value>
     <description>Maximum size of the bulk in bytes.</description>
   </property>
+  <property>
+    <name>http.robots.agents</name>
+    <value>App_Search_Agent</value> <!-- this is the robot name we're looking for in robots.txt files -->
+  </property>
 
 </configuration>
