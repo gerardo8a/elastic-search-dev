@@ -3,7 +3,12 @@ set -u
 
 BASEDIR=$(dirname "$0")
 cwd=$(pwd)/$BASEDIR
-command=$1
+
+if [ -z ${1+x} ]; then
+    command="nothing"
+else
+    command=$1
+fi
 
 check_md5() {
     local filemd5=$1
@@ -42,13 +47,14 @@ nutch_extra=src.tar.gz
 nutch_package=${nutch_base_name}-${nutch_version}-${nutch_extra}
 
 if [ ! -d ${cwd}/${nutch_base_name}-${nutch_version} ]; then
-    echo "Downloading ${nutch_package}"
-    echo "Fetching http://www.apache.org/dist/nutch/${nutch_version}/${nutch_package}"
-    curl --progress-bar http://www.apache.org/dist/nutch/${nutch_version}/${nutch_package} -o ${nutch_package}
+    if [ ! -d ${nutch_package} ]; then
+        echo "Downloading ${nutch_package}"
+        echo "Fetching http://www.apache.org/dist/nutch/${nutch_version}/${nutch_package}"
+        curl --progress-bar http://www.apache.org/dist/nutch/${nutch_version}/${nutch_package} -o ${nutch_package}
 
-    echo "Fetching http://apache.org/dist/nutch/${nutch_version}/${nutch_package}.md5"
-    curl --progress-bar http://apache.org/dist/nutch/${nutch_version}/${nutch_package}.md5 -o ${nutch_package}.md5
-
+        echo "Fetching http://apache.org/dist/nutch/${nutch_version}/${nutch_package}.md5"
+        curl --progress-bar http://apache.org/dist/nutch/${nutch_version}/${nutch_package}.md5 -o ${nutch_package}.md5
+    fi
     filemd5=$(cat ${nutch_package}.md5 | awk {"print \$2"})
     nutchmd5=$(md5 -q ${nutch_package})
     check_md5 filemd5 nutchmd5
@@ -62,13 +68,14 @@ ant_extra=bin.tar.gz
 ant_package=${ant_base_name}-${ant_version}-${ant_extra}
 
 if [ ! -d ${cwd}/${ant_base_name}-${ant_version} ]; then
-    echo "Downloading ${ant_package}"
-    echo "Fetching http://download.nextag.com/apache/ant/binaries/${ant_package} -o ${ant_package}"
-    curl --progress-bar http://download.nextag.com/apache/ant/binaries/${ant_package} -o ${ant_package}
+    if [ ! -d ${ant_package} ]; then
+        echo "Downloading ${ant_package}"
+        echo "Fetching http://download.nextag.com/apache/ant/binaries/${ant_package} -o ${ant_package}"
+        curl --progress-bar http://download.nextag.com/apache/ant/binaries/${ant_package} -o ${ant_package}
 
-    echo "Fetching https://www.apache.org/dist/ant/binaries/${ant_package}.md5 -o ${ant_package}.md5"
-    curl --progress-bar https://www.apache.org/dist/ant/binaries/${ant_package}.md5 -o ${ant_package}.md5
-
+        echo "Fetching https://www.apache.org/dist/ant/binaries/${ant_package}.md5 -o ${ant_package}.md5"
+        curl --progress-bar https://www.apache.org/dist/ant/binaries/${ant_package}.md5 -o ${ant_package}.md5
+    fi
     antfilemd5=$(cat ${ant_package}.md5)
     antmd5=$(md5 -q ${ant_package})
     check_md5 antfilemd5 antmd5
@@ -84,12 +91,14 @@ hbase_package=${hbase_base_name}-${hbase_version}-${hbase_extra}
 hbase_extra_dirname=-hadoop2
 
 if [ ! -d ${cwd}/${hbase_base_name}-${hbase_version}${hbase_extra_dirname} ]; then
-    echo "Downloading ${hbase_package}"
-    echo "Fetching http://archive.apache.org/dist/${hbase_base_name}/${hbase_base_name}-${hbase_version}/${hbase_package}"
-    curl --progress-bar http://archive.apache.org/dist/${hbase_base_name}/${hbase_base_name}-${hbase_version}/${hbase_package} -o ${hbase_package}
+    if [ ! -d ${hbase_package} ]; then
+        echo "Downloading ${hbase_package}"
+        echo "Fetching http://archive.apache.org/dist/${hbase_base_name}/${hbase_base_name}-${hbase_version}/${hbase_package}"
+        curl --progress-bar http://archive.apache.org/dist/${hbase_base_name}/${hbase_base_name}-${hbase_version}/${hbase_package} -o ${hbase_package}
 
-    echo "Fetching http://archive.apache.org/dist/${hbase_base_name}/${hbase_base_name}-${hbase_version}/${hbase_package}.mds"
-    curl --progress-bar http://archive.apache.org/dist/${hbase_base_name}/${hbase_base_name}-${hbase_version}/${hbase_package}.mds -o ${hbase_package}.mds
+        echo "Fetching http://archive.apache.org/dist/${hbase_base_name}/${hbase_base_name}-${hbase_version}/${hbase_package}.mds"
+        curl --progress-bar http://archive.apache.org/dist/${hbase_base_name}/${hbase_base_name}-${hbase_version}/${hbase_package}.mds -o ${hbase_package}.mds
+    fi
 
     hbasefilemd5=$(cat ${hbase_package}.mds|grep MD5 -A 1|sed 's/^.*= //'|tr -d '\n'|sed 's/[[:space:]]//g'|tr '[:upper:]' '[:lower:]')
     hbasemd5=$(md5 -q ${hbase_package})
@@ -99,8 +108,10 @@ fi
 
 build_nutch() {
     # Define which hbase and gora version to be used
-    echo "Copy ${cwd}/ivy/ivy.xml -> ${cwd}/${nutch_base_name}-${nutch_version}/"
+    echo "Copy ${cwd}/ivy/ivy.xml -> ${cwd}/${nutch_base_name}-${nutch_version}/ivy/"
     cp ${cwd}/ivy/* ${cwd}/${nutch_base_name}-${nutch_version}/ivy/
+    echo "Copy ${cwd}/conf/nutch/*.properties -> ${cwd}/${nutch_base_name}-${nutch_version}/conf/"
+    cp ${cwd}/conf/nutch/*.properties ${cwd}/${nutch_base_name}-${nutch_version}/conf/
 
     echo "Compiling ..."
     cd ${cwd}/${nutch_base_name}-${nutch_version} && ${cwd}/${ant_base_name}-${ant_version}/bin/ant clean && ${cwd}/${ant_base_name}-${ant_version}/bin/ant runtime
@@ -112,9 +123,9 @@ build_nutch() {
     fi
     
     echo "Copying conf/nutch/* -> ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf"
-    cp ${cwd}/conf/nutch/* ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf
-    cp ${cwd}/conf/hbase/* ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf
-    cd ${cwd}
+    cp ${cwd}/conf/nutch/nutch-site.xml ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf
+    echo "Copying ${cwd}/conf/hbase/* -> ${cwd}/hbase-${hbase_version}${hbase_extra_dirname}/conf"
+    cp ${cwd}/conf/hbase/* ${cwd}/${hbase_base_name}-${hbase_version}${hbase_extra_dirname}/conf
 }
 
 hbase_restart() {
@@ -128,7 +139,7 @@ hbase_restart() {
 
 nutch_indexing() {
     echo "Injecting urls into nutch"
-    ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch inject urls
+    ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch inject ${cwd}/urls
     echo "Generate urls to fetch"
     ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch generate -topN 40
     echo "Fetch pages"

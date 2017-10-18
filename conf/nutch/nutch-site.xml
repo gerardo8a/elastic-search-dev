@@ -22,7 +22,7 @@
 <configuration>
   <property>
     <name>http.agent.name</name>
-    <value>App Search Agent</value>
+    <value>Gerrys Crawler</value>
   </property>
   <property>
     <name>storage.data.store.class</name>
@@ -31,7 +31,11 @@
   </property>
   <property>
     <name>plugin.includes</name>     
-    <value>protocol-httpclient|urlfilter-regex|parse-(text|tika|js)|index-(basic|anchor)|query-(basic|site|url)|response-(json|xml)|summary-basic|scoring-opic|urlnormalizer-(pass|regex|basic)|indexer-elastic</value>
+    <value>protocol-httpclient|urlfilter-regex|parse-(text|tika|js)|index-(basic|anchor)|query-(basic|site|url)|response-(json|xml)|summary-basic|scoring-opic|scoring-depth|urlnormalizer-(pass|regex|basic)|indexer-elastic</value>
+  </property>
+  <property>
+    <name>scoring.depth.max</name>
+    <value>3</value>
   </property>
   <property>
     <name>db.ignore.external.links</name>
