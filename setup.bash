@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-cwd=$(pwd)
+
+BASEDIR=$(dirname "$0")
+cwd=$(pwd)/$BASEDIR
+command=$1
 
 check_md5() {
     local filemd5=$1
@@ -37,7 +40,7 @@ nutch_base_name=apache-nutch
 nutch_extra=src.tar.gz
 nutch_package=${nutch_base_name}-${nutch_version}-${nutch_extra}
 
-if [ ! -d ${nutch_base_name}-${nutch_version} ]; then
+if [ ! -d ${cwd}/${nutch_base_name}-${nutch_version} ]; then
     echo "Downloading ${nutch_package}"
     echo "Fetching http://www.apache.org/dist/nutch/${nutch_version}/${nutch_package}"
     curl --progress-bar http://www.apache.org/dist/nutch/${nutch_version}/${nutch_package} -o ${nutch_package}
@@ -56,7 +59,7 @@ ant_base_name=apache-ant
 ant_extra=bin.tar.gz
 ant_package=${ant_base_name}-${ant_version}-${ant_extra}
 
-if [ ! -d ${ant_base_name}-${ant_version} ]; then
+if [ ! -d ${cwd}/${ant_base_name}-${ant_version} ]; then
     echo "Downloading ${ant_package}"
     echo "Fetching http://download.nextag.com/apache/ant/binaries/${ant_package} -o ${ant_package}"
     curl --progress-bar http://download.nextag.com/apache/ant/binaries/${ant_package} -o ${ant_package}
@@ -78,7 +81,7 @@ hbase_extra=hadoop2-bin.tar.gz
 hbase_package=${hbase_base_name}-${hbase_version}-${hbase_extra}
 hbase_extra_dirname=-hadoop2
 
-if [ ! -d ${hbase_base_name}-${hbase_version}${hbase_extra_dirname} ]; then
+if [ ! -d ${cwd}/${hbase_base_name}-${hbase_version}${hbase_extra_dirname} ]; then
     echo "Downloading ${hbase_package}"
     echo "Fetching http://archive.apache.org/dist/${hbase_base_name}/${hbase_base_name}-${hbase_version}/${hbase_package}"
     curl --progress-bar http://archive.apache.org/dist/${hbase_base_name}/${hbase_base_name}-${hbase_version}/${hbase_package} -o ${hbase_package}
@@ -92,51 +95,82 @@ if [ ! -d ${hbase_base_name}-${hbase_version}${hbase_extra_dirname} ]; then
     unTarPackage ${hbase_package}
 fi
 
-# Configuration and Compiling section
-echo "Copy ivy/ivy.xml -> ./${nutch_base_name}-${nutch_version}/"
-cp ivy/* ./${nutch_base_name}-${nutch_version}/ivy/
+build_nutch() {
+    # Define which hbase and gora version to be used
+    echo "Copy ${cwd}/ivy/ivy.xml -> ${cwd}/${nutch_base_name}-${nutch_version}/"
+    cp ${cwd}/ivy/* ${cwd}/${nutch_base_name}-${nutch_version}/ivy/
 
-echo "Compiling ..."
-cd ${nutch_base_name}-${nutch_version} && ./../${ant_base_name}-${ant_version}/bin/ant clean && ./../${ant_base_name}-${ant_version}/bin/ant runtime
-succeed=$?
-
-if [ $succeed != 0 ]
-then
-    echo "Something went wrong while compiling ant"
-    exit 1
-fi
-
-# Return to the script dir
-cd $cwd && pwd
-echo "Copying conf/nutch/* -> ./${nutch_base_name}-${nutch_version}/runtime/local/conf"
-cp conf/nutch/* ./${nutch_base_name}-${nutch_version}/runtime/local/conf
-cp conf/hbase/* ./${nutch_base_name}-${nutch_version}/runtime/local/conf
-
-echo "Copying conf/hbase/* -> ./hbase-${hbase_version}${hbase_extra_dirname}/conf"
-cp conf/hbase/* ./${hbase_base_name}-${hbase_version}${hbase_extra_dirname}/conf
-
-./${hbase_base_name}-${hbase_version}${hbase_extra_dirname}/bin/start-hbase.sh
-echo "Hbase UI Running on http://localhost:16010"
-
-echo "Injecting urls into nutch"
-./${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch inject urls
-echo "Generate urls to fetch"
-./${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch generate -topN 40
-echo "Fetch pages"
-./${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch fetch -all
-echo "Parse pages"
-./${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch parse -all
-echo "Running update will keep stuff fresh"
-./${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch updatedb -all
-echo "Indexing with elastic search"
-./${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch index elasticsearch -all
+    echo "Copying conf/nutch/* -> ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf"
+    cp ${cwd}/conf/nutch/* ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf
+    cp ${cwd}/conf/hbase/* ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf
 
 
-echo "Cleaning up..."
-cd $cwd
-echo "/bin/rm -f ${nutch_base_name}-${nutch_version}*.gz*"
-/bin/rm -f ${nutch_base_name}-${nutch_version}*.gz*
-echo "/bin/rm -f ${ant_base_name}-${ant_version}*.gz*"
-/bin/rm -f ${ant_base_name}-${ant_version}*.gz*
-echo "/bin/rm -f ${hbase_base_name}-${hbase_version}*.gz*"
-/bin/rm -f ${hbase_base_name}-${hbase_version}*.gz*
+    echo "Compiling ..."
+    cd ${cwd}/${nutch_base_name}-${nutch_version} && ${cwd}/${ant_base_name}-${ant_version}/bin/ant clean && ${cwd}/${ant_base_name}-${ant_version}/bin/ant runtime
+    succeed=$?
+    if [ $succeed != 0 ]
+    then
+        echo "Something went wrong while compiling ant"
+        exit 1
+    fi
+    cd ${cwd}
+}
+
+hbase_restart() {
+    echo "Copying ${cwd}/conf/hbase/* -> ${cwd}/hbase-${hbase_version}${hbase_extra_dirname}/conf"
+    cp ${cwd}/conf/hbase/* ${cwd}/${hbase_base_name}-${hbase_version}${hbase_extra_dirname}/conf
+
+    ${cwd}/${hbase_base_name}-${hbase_version}${hbase_extra_dirname}/bin/stop-hbase.sh
+    ${cwd}/${hbase_base_name}-${hbase_version}${hbase_extra_dirname}/bin/start-hbase.sh
+    echo "Hbase UI Running on http://localhost:16010 ? not sure if this is the right port"
+}
+
+nutch_indexing() {
+    echo "Injecting urls into nutch"
+    ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch inject urls
+    echo "Generate urls to fetch"
+    ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch generate -topN 40
+    echo "Fetch pages"
+    ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch fetch -all
+    echo "Parse pages"
+    ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch parse -all
+    echo "Running update will keep stuff fresh"
+    ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch updatedb -all
+    echo "Indexing with elastic search"
+    ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/bin/nutch index elasticsearch -all
+}
+
+clean_all() {
+    command=$1
+    if [ "$command" == "cleanall" ]; then
+        echo "Cleaning all"
+        ${cwd}/${hbase_base_name}-${hbase_version}${hbase_extra_dirname}/bin/stop-hbase.sh
+
+        echo "/bin/rm -f ${cwd}/${nutch_base_name}*"
+        /bin/rm -rf ${cwd}/${nutch_base_name}*
+
+        echo "/bin/rm -f ${cwd}/${ant_base_name}*"
+        /bin/rm -rf ${cwd}/${ant_base_name}*
+
+        echo "/bin/rm -f ${cwd}/${hbase_base_name}*"
+        /bin/rm -rf ${cwd}/${hbase_base_name}*
+
+        exit 1
+    fi
+}
+
+clean_gz() {
+    echo "Cleaning up..."
+    echo "/bin/rm -f ${cwd}/${nutch_base_name}-${nutch_version}*.gz*"
+    /bin/rm -f ${cwd}/${nutch_base_name}-${nutch_version}*.gz*
+    echo "/bin/rm -f ${cwd}/${ant_base_name}-${ant_version}*.gz*"
+    /bin/rm -f ${cwd}/${ant_base_name}-${ant_version}*.gz*
+    echo "/bin/rm -f ${cwd}/${hbase_base_name}-${hbase_version}*.gz*"
+    /bin/rm -f ${cwd}/${hbase_base_name}-${hbase_version}*.gz* 
+}
+
+clean_all $command
+build_nutch
+hbase_restart
+nutch_indexing
+clean_gz
