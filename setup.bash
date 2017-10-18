@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -u
 
 BASEDIR=$(dirname "$0")
 cwd=$(pwd)/$BASEDIR
@@ -54,6 +55,7 @@ if [ ! -d ${cwd}/${nutch_base_name}-${nutch_version} ]; then
     unTarPackage ${nutch_package}
 fi
 
+#ant
 ant_version=1.10.1
 ant_base_name=apache-ant
 ant_extra=bin.tar.gz
@@ -100,11 +102,6 @@ build_nutch() {
     echo "Copy ${cwd}/ivy/ivy.xml -> ${cwd}/${nutch_base_name}-${nutch_version}/"
     cp ${cwd}/ivy/* ${cwd}/${nutch_base_name}-${nutch_version}/ivy/
 
-    echo "Copying conf/nutch/* -> ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf"
-    cp ${cwd}/conf/nutch/* ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf
-    cp ${cwd}/conf/hbase/* ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf
-
-
     echo "Compiling ..."
     cd ${cwd}/${nutch_base_name}-${nutch_version} && ${cwd}/${ant_base_name}-${ant_version}/bin/ant clean && ${cwd}/${ant_base_name}-${ant_version}/bin/ant runtime
     succeed=$?
@@ -113,6 +110,10 @@ build_nutch() {
         echo "Something went wrong while compiling ant"
         exit 1
     fi
+    
+    echo "Copying conf/nutch/* -> ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf"
+    cp ${cwd}/conf/nutch/* ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf
+    cp ${cwd}/conf/hbase/* ${cwd}/${nutch_base_name}-${nutch_version}/runtime/local/conf
     cd ${cwd}
 }
 
@@ -145,28 +146,26 @@ clean_all() {
     if [ "$command" == "cleanall" ]; then
         echo "Cleaning all"
         ${cwd}/${hbase_base_name}-${hbase_version}${hbase_extra_dirname}/bin/stop-hbase.sh
-
-        echo "/bin/rm -f ${cwd}/${nutch_base_name}*"
-        /bin/rm -rf ${cwd}/${nutch_base_name}*
-
-        echo "/bin/rm -f ${cwd}/${ant_base_name}*"
-        /bin/rm -rf ${cwd}/${ant_base_name}*
-
-        echo "/bin/rm -f ${cwd}/${hbase_base_name}*"
-        /bin/rm -rf ${cwd}/${hbase_base_name}*
-
+        if [ -d ${cwd}/${nutch_base_name}-${nutch_version} ] && [ -d ${hbase_base_name}-${hbase_version}${hbase_extra_dirname} ] && [ -d ${cwd}/${ant_base_name}-${ant_version} ]; then
+            echo "/bin/rm -f ${cwd}/${nutch_base_name}-${nutch_version}*"
+            /bin/rm -rf ${cwd}/${nutch_base_name}-${nutch_version}*
+            echo "/bin/rm -f ${cwd}/${ant_base_name}-${ant_version}*"
+            /bin/rm -rf ${cwd}/${ant_base_name}-${ant_version}*
+            echo "/bin/rm -f ${cwd}/${hbase_base_name}-${hbase_version}${hbase_extra_dirname}*"
+            /bin/rm -rf ${cwd}/${hbase_base_name}-${hbase_version}${hbase_extra_dirname}*
+        fi 
         exit 1
     fi
 }
 
 clean_gz() {
     echo "Cleaning up..."
-    echo "/bin/rm -f ${cwd}/${nutch_base_name}-${nutch_version}*.gz*"
-    /bin/rm -f ${cwd}/${nutch_base_name}-${nutch_version}*.gz*
-    echo "/bin/rm -f ${cwd}/${ant_base_name}-${ant_version}*.gz*"
-    /bin/rm -f ${cwd}/${ant_base_name}-${ant_version}*.gz*
-    echo "/bin/rm -f ${cwd}/${hbase_base_name}-${hbase_version}*.gz*"
-    /bin/rm -f ${cwd}/${hbase_base_name}-${hbase_version}*.gz* 
+    echo "/bin/rm -f ${cwd}/${nutch_package}"
+    /bin/rm -f ${cwd}/${nutch_package}
+    echo "/bin/rm -f ${cwd}/${ant_package}"
+    /bin/rm -f ${cwd}/${ant_package}
+    echo "/bin/rm -f ${cwd}/${hbase_package}"
+    /bin/rm -f ${cwd}/${hbase_package}
 }
 
 clean_all $command
