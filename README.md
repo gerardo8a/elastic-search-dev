@@ -15,6 +15,11 @@ After docker is done you will end up with twi services up the api and Kibana lis
 * Kibana http://localhost:5601/
 
 # Installing nutch
-in progress.....
-
-http://hbase.apache.org/book.html#quickstart
+* You need to have Java 8
+* You need to have elastic search running
+* Clone repo
+  * ```git@github.com:gerardo8a/elastic-search-dev.git```
+* Configure hadoop directory
+   * ```conf/hbase/hbase-site.xml```
+* run ```./setup.bash``` this will take care of pulling, compiling, crawling and pushing to elastic (this last is not working for me)
+* The only service we start is the hbase process, to stop it run ```./stop-hbase.sh```

@@ -180,7 +180,7 @@ clean_gz() {
     /bin/rm -f ${cwd}/${hbase_package}
 }
 
-clean_all $command
+#clean_all $command
 build_nutch
 hbase_restart
 nutch_indexing
