@@ -42,6 +42,7 @@ echo ${JAVA_HOME}
 
 # Nutch
 nutch_version=2.3.1
+#nutch_version=1.13
 nutch_base_name=apache-nutch
 nutch_extra=src.tar.gz
 nutch_package=${nutch_base_name}-${nutch_version}-${nutch_extra}

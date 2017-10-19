@@ -51,7 +51,8 @@
   </property>
   <property>
     <name>elastic.cluster</name>
-    <value>elasticsearch</value>
+    <!-- <value>elasticsearch</value> -->
+    <value>docker-cluster</value>
   </property>
   <property>
     <name>elastic.index</name>
